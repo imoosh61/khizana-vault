@@ -13,6 +13,8 @@ struct AppMainView: View {
     @EnvironmentObject private var environment: AppEnvironment
     @EnvironmentObject private var auth: BiometricAuthManager
     @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var guardian = SecurityGuard()
+    @State private var dismissedEnvironmentWarning = false
 
     @AppStorage(AppearanceMode.storageKey) private var appearanceRaw = AppearanceMode.dark.rawValue
 
@@ -24,8 +26,16 @@ struct AppMainView: View {
         ZStack {
             content
 
-            if scenePhase != .active {
-                PrivacyShieldView()
+            if auth.state == .unlocked && guardian.environmentSuspect && !dismissedEnvironmentWarning {
+                VStack {
+                    EnvironmentWarningBanner { dismissedEnvironmentWarning = true }
+                    Spacer()
+                }
+                .zIndex(5)
+            }
+
+            if scenePhase != .active || guardian.isScreenCaptured {
+                PrivacyShieldView(showsCaptureNotice: guardian.isScreenCaptured)
                     .transition(.opacity)
                     .zIndex(10)
             }
@@ -33,6 +43,9 @@ struct AppMainView: View {
         .tint(Theme.accent)
         .preferredColorScheme(appearance.colorScheme)
         .animation(.easeInOut(duration: 0.15), value: scenePhase)
+        .onChange(of: auth.state) { state in
+            if state != .unlocked { guardian.clearClipboard() }
+        }
         .onChange(of: scenePhase) { phase in
             switch phase {
             case .background:
@@ -70,14 +83,47 @@ struct AppMainView: View {
 // MARK: - غطاء الخصوصية
 
 struct PrivacyShieldView: View {
+    var showsCaptureNotice = false
+
     var body: some View {
         ZStack {
             Rectangle().fill(.ultraThickMaterial)
-            Image(systemName: "lock.shield.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(Theme.accent)
+            VStack(spacing: 14) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(Theme.accent)
+                if showsCaptureNotice {
+                    Text("تسجيل الشاشة قيد التشغيل — تم إخفاء المحتوى.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+            }
         }
         .ignoresSafeArea()
+    }
+}
+
+struct EnvironmentWarningBanner: View {
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.shield.fill")
+                .foregroundStyle(Theme.warning)
+            Text("رُصدت مؤشرات جيلبريك أو أدوات حقن على هذا الجهاز، وقد تكون بياناتك أقل حماية.")
+                .font(.footnote)
+            Spacer(minLength: 8)
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+            }
+            .accessibilityLabel(Text("إغلاق"))
+        }
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.top, 6)
     }
 }
 

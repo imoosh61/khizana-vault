@@ -181,3 +181,5 @@
 "داكن" = "Sombre";
 "فاتح" = "Clair";
 "حسب النظام" = "Système";
+"تسجيل الشاشة قيد التشغيل — تم إخفاء المحتوى." = "L'enregistrement d'écran est actif — contenu masqué.";
+"رُصدت مؤشرات جيلبريك أو أدوات حقن على هذا الجهاز، وقد تكون بياناتك أقل حماية." = "Des indices de jailbreak ou d'outils d'injection ont été détectés sur cet appareil ; vos données peuvent être moins protégées.";

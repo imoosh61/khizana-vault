@@ -181,3 +181,5 @@
 "داكن" = "Dark";
 "فاتح" = "Light";
 "حسب النظام" = "System";
+"تسجيل الشاشة قيد التشغيل — تم إخفاء المحتوى." = "Screen recording is active — content hidden.";
+"رُصدت مؤشرات جيلبريك أو أدوات حقن على هذا الجهاز، وقد تكون بياناتك أقل حماية." = "Jailbreak or injection tool indicators were detected on this device; your data may be less protected.";

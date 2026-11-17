@@ -181,3 +181,5 @@
 "داكن" = "Oscuro";
 "فاتح" = "Claro";
 "حسب النظام" = "Sistema";
+"تسجيل الشاشة قيد التشغيل — تم إخفاء المحتوى." = "La grabación de pantalla está activa: contenido oculto.";
+"رُصدت مؤشرات جيلبريك أو أدوات حقن على هذا الجهاز، وقد تكون بياناتك أقل حماية." = "Se detectaron indicios de jailbreak o herramientas de inyección en este dispositivo; tus datos pueden estar menos protegidos.";

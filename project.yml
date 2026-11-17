@@ -41,6 +41,6 @@ targets:
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         NSFaceIDUsageDescription: يستخدم التطبيق Face ID لفتح الخزنة بأمان.
         NSPhotoLibraryUsageDescription: يحتاج التطبيق إلى الوصول لمكتبة الصور لاستيراد الصور والفيديوهات إلى الخزنة.
-        GIDClientID: YOUR_CLIENT_ID
+        GIDClientID: 4954064853-bn2g61iaah1gjckruj3pul3o6gn9khkh.apps.googleusercontent.com
         CFBundleURLTypes:
-          - CFBundleURLSchemes: [YOUR_REVERSED_CLIENT_ID]
+          - CFBundleURLSchemes: [com.googleusercontent.apps.4954064853-bn2g61iaah1gjckruj3pul3o6gn9khkh]

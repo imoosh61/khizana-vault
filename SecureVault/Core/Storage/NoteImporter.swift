@@ -88,7 +88,10 @@ enum NoteImporter {
             )
             return attributed?.string
         default:
-            for encoding in [String.Encoding.utf8, .utf16, .windowsCP1256, .isoLatin1] {
+            let arabicWindows = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(
+                CFStringEncoding(CFStringEncodings.windowsArabic.rawValue)
+            ))
+            for encoding in [String.Encoding.utf8, .utf16, arabicWindows, .isoLatin1] {
                 if let text = try? String(contentsOf: url, encoding: encoding) { return text }
             }
             return nil

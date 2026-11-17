@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 import PhotosUI
 import CoreData
 
@@ -34,6 +35,69 @@ final class MediaImportViewModel: ObservableObject {
             do {
                 let info = try await MediaFileStore.importPickerItem(item)
 
+                if isDuplicate(hash: info.contentHash, in: context) {
+                    MediaFileStore.removeFile(named: info.fileName)
+                    duplicates += 1
+                } else {
+                    MediaItem.insert(in: context, info: info)
+                    do {
+                        try context.saveIfNeeded()
+                        added += 1
+                    } catch {
+                        context.rollback()
+                        MediaFileStore.removeFile(named: info.fileName)
+                        failures += 1
+                    }
+                }
+            } catch {
+                failures += 1
+            }
+            completed += 1
+        }
+
+        isImporting = false
+
+        var parts: [String] = []
+        if added > 0 { parts.append(String(format: String(localized: "تمت إضافة %lld"), added)) }
+        if duplicates > 0 { parts.append(String(format: String(localized: "تم تخطي %lld مكرر"), duplicates)) }
+        if failures > 0 { parts.append(String(format: String(localized: "فشل استيراد %lld"), failures)) }
+        resultMessage = parts.joined(separator: " • ")
+    }
+
+    /// استيراد صور/فيديوهات من تطبيق «الملفات».
+    func importFileURLs(_ urls: [URL], context: NSManagedObjectContext) async {
+        guard !urls.isEmpty, !isImporting else { return }
+
+        isImporting = true
+        completed = 0
+        total = urls.count
+
+        var added = 0
+        var duplicates = 0
+        var failures = 0
+
+        for url in urls {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+
+            let type = UTType(filenameExtension: url.pathExtension.lowercased())
+            let kind: MediaKind?
+            if type?.conforms(to: .movie) == true || type?.conforms(to: .video) == true {
+                kind = .video
+            } else if type?.conforms(to: .image) == true {
+                kind = .image
+            } else {
+                kind = nil
+            }
+
+            guard let kind else {
+                failures += 1
+                completed += 1
+                continue
+            }
+
+            do {
+                let info = try await MediaFileStore.importFile(from: url, kind: kind)
                 if isDuplicate(hash: info.contentHash, in: context) {
                     MediaFileStore.removeFile(named: info.fileName)
                     duplicates += 1

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 import PhotosUI
 
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
@@ -53,6 +54,7 @@ final class AppRouter: ObservableObject {
     @Published var showNewNote = false
     @Published var showPhotoPicker = false
     @Published var showNoteImporter = false
+    @Published var showMediaFileImporter = false
     @Published var pasteNoteRequested = false
 }
 
@@ -114,6 +116,18 @@ struct MainTabView: View {
                 noteImportMessage = error.localizedDescription
             }
         }
+        .fileImporter(
+            isPresented: $router.showMediaFileImporter,
+            allowedContentTypes: [.image, .movie],
+            allowsMultipleSelection: true
+        ) { result in
+            switch result {
+            case .success(let urls):
+                Task { await importer.importFileURLs(urls, context: context) }
+            case .failure(let error):
+                importer.resultMessage = error.localizedDescription
+            }
+        }
         .onChange(of: router.pasteNoteRequested) { requested in
             guard requested else { return }
             router.pasteNoteRequested = false
@@ -169,6 +183,12 @@ private struct FloatingAddButton: View {
                 router.showPhotoPicker = true
             } label: {
                 Label("استيراد صور وفيديو", systemImage: "photo.badge.plus")
+            }
+
+            Button {
+                router.showMediaFileImporter = true
+            } label: {
+                Label("استيراد صور وفيديو من الملفات", systemImage: "folder.badge.plus")
             }
 
             Button {

@@ -198,3 +198,4 @@
 "حذف التقرير" = "Delete report";
 "تشخيص" = "Diagnostics";
 "حدث عطل في الجلسة السابقة. التقرير محلي ولا يُرسل لأي جهة." = "A crash occurred in the previous session. The report is local and never sent anywhere.";
+"استيراد صور وفيديو من الملفات" = "Import photos & videos from Files";

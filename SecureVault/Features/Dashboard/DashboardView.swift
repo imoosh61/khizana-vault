@@ -105,7 +105,7 @@ struct DashboardView: View {
                 infoRow(
                     icon: "icloud.and.arrow.up.fill",
                     title: "آخر نسخة سحابية",
-                    value: Text(last.createdAt, style: .relative) + Text(verbatim: " • ") + Text(verbatim: last.formattedSize),
+                    value: Text(last.createdAt, style: .relative) + Text(verbatim: " • ") + Text(verbatim: ByteCountFormatter.string(fromByteCount: last.encryptedByteCount, countStyle: .file)),
                     tint: Theme.secure
                 )
             } else {

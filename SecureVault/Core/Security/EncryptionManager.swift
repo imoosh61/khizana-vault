@@ -427,13 +427,13 @@ private struct ByteReader {
 
 extension Data {
     mutating func appendBigEndian<T: FixedWidthInteger>(_ value: T) {
-        withUnsafeBytes(of: value.bigEndian) { append(contentsOf: $0) }
+        Swift.withUnsafeBytes(of: value.bigEndian) { append(contentsOf: $0) }
     }
 }
 
 extension FixedWidthInteger {
     var bigEndianData: Data {
-        withUnsafeBytes(of: bigEndian) { Data($0) }
+        Swift.withUnsafeBytes(of: bigEndian) { Data($0) }
     }
 
     /// يقرأ عدداً من بايتات Big-Endian (حتى 8 بايتات).

@@ -1,0 +1,3 @@
+"NSFaceIDUsageDescription" = "يستخدم التطبيق Face ID لفتح الخزنة بأمان.";
+"NSPhotoLibraryUsageDescription" = "يحتاج التطبيق إلى الوصول لمكتبة الصور لاستيراد الصور والفيديوهات إلى الخزنة.";
+"CFBundleDisplayName" = "خِزانة";

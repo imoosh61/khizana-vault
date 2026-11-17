@@ -1,0 +1,3 @@
+"NSFaceIDUsageDescription" = "The app uses Face ID to unlock your vault securely.";
+"NSPhotoLibraryUsageDescription" = "The app needs access to your photo library to import photos and videos into the vault.";
+"CFBundleDisplayName" = "Khizana";

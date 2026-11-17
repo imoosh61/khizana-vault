@@ -1,0 +1,3 @@
+"NSFaceIDUsageDescription" = "L'app utilise Face ID pour déverrouiller votre coffre en toute sécurité.";
+"NSPhotoLibraryUsageDescription" = "L'app a besoin d'accéder à votre photothèque pour importer photos et vidéos dans le coffre.";
+"CFBundleDisplayName" = "Coffre Khizana";

@@ -1,0 +1,3 @@
+"NSFaceIDUsageDescription" = "La app usa Face ID para desbloquear tu bóveda de forma segura.";
+"NSPhotoLibraryUsageDescription" = "La app necesita acceder a tu fototeca para importar fotos y vídeos a la bóveda.";
+"CFBundleDisplayName" = "Bóveda Khizana";

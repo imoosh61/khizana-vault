@@ -1,0 +1,3 @@
+"NSFaceIDUsageDescription" = "Uygulama, kasanızın kilidini güvenle açmak için Face ID kullanır.";
+"NSPhotoLibraryUsageDescription" = "Uygulama, fotoğraf ve videoları kasaya aktarmak için fotoğraf kitaplığınıza erişmek ister.";
+"CFBundleDisplayName" = "Khizana Kasa";

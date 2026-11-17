@@ -15,6 +15,7 @@ struct LockScreenView: View {
     @State private var pin = ""
     @State private var shakeTrigger = 0
     @State private var secondsRemaining = 0
+    @State private var promptInFlight = false
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -123,16 +124,29 @@ struct LockScreenView: View {
     }
 
     private func promptBiometricsIfNeeded() {
-        guard scenePhase == .active,
+        guard !promptInFlight,
               auth.needsBiometricPrompt,
               auth.state == .locked,
               auth.canUseBiometrics,
               !auth.isLockedOut
         else { return }
 
-        Task {
+        promptInFlight = true
+        Task { @MainActor in
+            defer { promptInFlight = false }
+
+            // ننتظر حتى يصبح التطبيق نشطاً فعلاً (قراءة scenePhase داخل المهمة قد تكون قديمة).
+            for _ in 0..<24 {
+                if UIApplication.shared.applicationState == .active { break }
+                try? await Task.sleep(nanoseconds: 250_000_000)
+            }
             try? await Task.sleep(nanoseconds: 350_000_000)
-            guard scenePhase == .active, auth.needsBiometricPrompt else { return }
+
+            guard UIApplication.shared.applicationState == .active,
+                  auth.needsBiometricPrompt,
+                  auth.state == .locked,
+                  !auth.isLockedOut
+            else { return }
             await auth.authenticateWithBiometrics()
         }
     }

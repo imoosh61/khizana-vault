@@ -28,16 +28,65 @@ extension Color {
     }
 }
 
+/// تخزين ألوان التطبيق التي يختارها المستخدم.
+enum ThemeStore {
+    static let accentKey = "theme.accentHex"
+    static let backgroundKey = "theme.backgroundHex"
+    static let cardKey = "theme.cardHex"
+    static let revisionKey = "theme.revision"
+
+    static let defaultAccent: UInt32 = 0x3B82F6
+    static let defaultBackground: UInt32 = 0x0D0F12
+    static let defaultCard: UInt32 = 0x181C23
+
+    static func value(_ key: String) -> UInt32? {
+        guard let number = UserDefaults.standard.object(forKey: key) as? Int else { return nil }
+        return UInt32(truncatingIfNeeded: number)
+    }
+
+    static func set(_ hex: UInt32?, for key: String) {
+        if let hex {
+            UserDefaults.standard.set(Int(hex), forKey: key)
+        } else {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        UserDefaults.standard.set(UserDefaults.standard.integer(forKey: revisionKey) + 1, forKey: revisionKey)
+    }
+
+    static func resetAll() {
+        for key in [accentKey, backgroundKey, cardKey] {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        UserDefaults.standard.set(UserDefaults.standard.integer(forKey: revisionKey) + 1, forKey: revisionKey)
+    }
+}
+
+extension Color {
+    /// القيمة السداسية RGB للون (يتجاهل الشفافية).
+    var hexValue: UInt32 {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        let r = UInt32(max(0, min(255, (red * 255).rounded())))
+        let g = UInt32(max(0, min(255, (green * 255).rounded())))
+        let b = UInt32(max(0, min(255, (blue * 255).rounded())))
+        return (r << 16) | (g << 8) | b
+    }
+}
+
 enum Theme {
     static let cornerRadius: CGFloat = 16
 
-    static let accent = Color(hex: 0x3B82F6)
+    static var accent: Color { Color(hex: ThemeStore.value(ThemeStore.accentKey) ?? ThemeStore.defaultAccent) }
     /// أخضر زمردي: التشفير والنسخ الاحتياطي.
     static let secure = Color(hex: 0x10B981)
     static let warning = Color(hex: 0xF59E0B)
 
-    static let background = Color.dynamic(dark: 0x0D0F12, light: 0xF5F7FA)
-    static let card = Color.dynamic(dark: 0x181C23, light: 0xFFFFFF)
+    static var background: Color {
+        Color.dynamic(dark: ThemeStore.value(ThemeStore.backgroundKey) ?? ThemeStore.defaultBackground, light: 0xF5F7FA)
+    }
+    static var card: Color {
+        Color.dynamic(dark: ThemeStore.value(ThemeStore.cardKey) ?? ThemeStore.defaultCard, light: 0xFFFFFF)
+    }
 
     static let cardStroke = Color(uiColor: UIColor {
         $0.userInterfaceStyle == .dark

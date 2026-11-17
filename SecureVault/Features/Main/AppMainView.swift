@@ -14,6 +14,8 @@ struct AppMainView: View {
     @EnvironmentObject private var auth: BiometricAuthManager
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var guardian = SecurityGuard()
+    @StateObject private var router = AppRouter()
+    @AppStorage(ThemeStore.revisionKey) private var themeRevision = 0
     @State private var dismissedEnvironmentWarning = false
 
     @AppStorage(AppearanceMode.storageKey) private var appearanceRaw = AppearanceMode.dark.rawValue
@@ -25,6 +27,8 @@ struct AppMainView: View {
     var body: some View {
         ZStack {
             content
+                .environmentObject(router)
+                .id(themeRevision)
 
             if auth.state == .unlocked && guardian.environmentSuspect && !dismissedEnvironmentWarning {
                 VStack {

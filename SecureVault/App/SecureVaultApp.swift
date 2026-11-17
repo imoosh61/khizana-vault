@@ -11,6 +11,10 @@ struct SecureVaultApp: App {
 
     @StateObject private var environment = AppEnvironment()
 
+    init() {
+        CrashReporter.install()
+    }
+
     var body: some Scene {
         WindowGroup {
             AppMainView()

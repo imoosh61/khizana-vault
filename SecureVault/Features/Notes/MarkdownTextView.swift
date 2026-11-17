@@ -57,7 +57,7 @@ struct MarkdownTextView: UIViewRepresentable {
 
         func makeToolbar() -> UIToolbar {
             let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 44))
-            toolbar.tintColor = UIColor(hex: 0x3B82F6)
+            toolbar.tintColor = UIColor(Theme.accent)
 
             func item(_ symbol: String, _ action: Selector) -> UIBarButtonItem {
                 UIBarButtonItem(image: UIImage(systemName: symbol), style: .plain, target: self, action: action)

@@ -52,6 +52,8 @@ final class AppRouter: ObservableObject {
     @Published var selected: AppSection = .dashboard
     @Published var showNewNote = false
     @Published var showPhotoPicker = false
+    @Published var showNoteImporter = false
+    @Published var pasteNoteRequested = false
 }
 
 struct MainTabView: View {
@@ -59,9 +61,21 @@ struct MainTabView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var context
 
-    @StateObject private var router = AppRouter()
+    @EnvironmentObject private var router: AppRouter
     @StateObject private var importer = MediaImportViewModel()
     @State private var pickerItems: [PhotosPickerItem] = []
+    @State private var noteImportMessage: String?
+
+    private func reportNoteImport(_ summary: NoteImportSummary) {
+        var parts: [String] = []
+        if summary.imported > 0 {
+            parts.append(String(format: String(localized: "تم استيراد %lld ملاحظة"), Int(summary.imported)))
+        }
+        if summary.failed > 0 {
+            parts.append(String(format: String(localized: "تعذّر استيراد %lld عنصر (فارغ أو غير مدعوم)"), Int(summary.failed)))
+        }
+        noteImportMessage = parts.joined(separator: "\n")
+    }
 
     var body: some View {
         Group {
@@ -71,7 +85,6 @@ struct MainTabView: View {
                 PhoneTabView()
             }
         }
-        .environmentObject(router)
         .environmentObject(importer)
         .overlay(alignment: .bottomTrailing) {
             if router.selected != .settings {
@@ -86,6 +99,33 @@ struct MainTabView: View {
             NavigationStack {
                 NoteEditorView(note: nil)
             }
+            .environment(\.managedObjectContext, context)
+            .environmentObject(router)
+        }
+        .fileImporter(
+            isPresented: $router.showNoteImporter,
+            allowedContentTypes: NoteImporter.contentTypes,
+            allowsMultipleSelection: true
+        ) { result in
+            switch result {
+            case .success(let urls):
+                reportNoteImport(NoteImporter.importFiles(urls, into: context))
+            case .failure(let error):
+                noteImportMessage = error.localizedDescription
+            }
+        }
+        .onChange(of: router.pasteNoteRequested) { requested in
+            guard requested else { return }
+            router.pasteNoteRequested = false
+            reportNoteImport(NoteImporter.importFromClipboard(into: context))
+        }
+        .alert("استيراد الملاحظات", isPresented: Binding(
+            get: { noteImportMessage != nil },
+            set: { if !$0 { noteImportMessage = nil } }
+        )) {
+            Button("حسناً", role: .cancel) {}
+        } message: {
+            Text(verbatim: noteImportMessage ?? "")
         }
         .photosPicker(
             isPresented: $router.showPhotoPicker,
@@ -129,6 +169,18 @@ private struct FloatingAddButton: View {
                 router.showPhotoPicker = true
             } label: {
                 Label("استيراد صور وفيديو", systemImage: "photo.badge.plus")
+            }
+
+            Button {
+                router.showNoteImporter = true
+            } label: {
+                Label("استيراد ملاحظات من ملفات", systemImage: "square.and.arrow.down")
+            }
+
+            Button {
+                router.pasteNoteRequested = true
+            } label: {
+                Label("لصق ملاحظة من الحافظة", systemImage: "doc.on.clipboard")
             }
         } label: {
             Image(systemName: "plus")

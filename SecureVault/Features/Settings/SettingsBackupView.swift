@@ -32,10 +32,12 @@ struct SettingsBackupView: View {
         Form {
             securitySection
             appearanceSection
+            ThemeSettingsSection()
             googleSection
             createBackupSection
             restoreSection
             aboutSection
+            CrashReportSection()
         }
         .scrollContentBackground(.hidden)
         .vaultBackground()

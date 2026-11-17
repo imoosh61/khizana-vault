@@ -97,6 +97,18 @@ enum MediaKind: String, CaseIterable, Sendable {
 
 // MARK: - كيانات Core Data
 
+/// يبني وصف الكيان من نموذج المنسّق أو، كاحتياط، من النموذج البرمجي المشترك.
+/// يتجنب انهيار `insertNewObject`/`as!` إن لم يُحلّ اسم الصنف وقت التشغيل.
+private func entityDescription(_ name: String, in context: NSManagedObjectContext) -> NSEntityDescription {
+    if let description = NSEntityDescription.entity(forEntityName: name, in: context) {
+        return description
+    }
+    guard let fallback = VaultModel.shared.entitiesByName[name] else {
+        preconditionFailure("Missing Core Data entity: \(name)")
+    }
+    return fallback
+}
+
 private enum EntityName {
     static let note = "Note"
     static let media = "MediaItem"
@@ -129,7 +141,7 @@ final class Note: NSManagedObject, Identifiable {
         tags: [String] = [],
         isPinned: Bool = false
     ) -> Note {
-        let note = NSEntityDescription.insertNewObject(forEntityName: EntityName.note, into: context) as! Note
+        let note = Note(entity: entityDescription(EntityName.note, in: context), insertInto: context)
         let now = Date()
         note.id = UUID()
         note.title = title
@@ -214,7 +226,7 @@ final class MediaItem: NSManagedObject, Identifiable {
 
     @discardableResult
     static func insert(in context: NSManagedObjectContext, info: ImportedMediaInfo) -> MediaItem {
-        let item = NSEntityDescription.insertNewObject(forEntityName: EntityName.media, into: context) as! MediaItem
+        let item = MediaItem(entity: entityDescription(EntityName.media, in: context), insertInto: context)
         item.id = UUID()
         item.fileName = info.fileName
         item.originalFileName = info.originalFileName
@@ -287,7 +299,7 @@ final class BackupRecord: NSManagedObject, Identifiable {
         deviceName: String,
         appVersion: String
     ) -> BackupRecord {
-        let record = NSEntityDescription.insertNewObject(forEntityName: EntityName.backup, into: context) as! BackupRecord
+        let record = BackupRecord(entity: entityDescription(EntityName.backup, in: context), insertInto: context)
         record.id = UUID()
         record.remoteFileID = remoteFileID
         record.fileName = fileName

@@ -98,6 +98,31 @@ enum MediaFileStore {
         return try await importFile(from: tempURL, kind: isVideo ? .video : .image)
     }
 
+    /// ينسخ ملفاً من «الملفات» إلى مجلد مؤقت عبر NSFileCoordinator
+    /// (يضمن تنزيل ملفات iCloud غير المحمّلة قبل القراءة). يجب حذف المجلد الأب بعد الاستخدام.
+    nonisolated static func stageCoordinated(_ url: URL) throws -> URL {
+        let scratch = try VaultStorage.makeScratchDirectory()
+        let destination = scratch.appending(path: url.lastPathComponent, directoryHint: .notDirectory)
+
+        var coordinationError: NSError?
+        var copyError: Error?
+        NSFileCoordinator(filePresenter: nil).coordinate(
+            readingItemAt: url, options: [], error: &coordinationError
+        ) { readable in
+            do {
+                try FileManager.default.copyItem(at: readable, to: destination)
+            } catch {
+                copyError = error
+            }
+        }
+
+        if let failure = coordinationError ?? copyError {
+            try? FileManager.default.removeItem(at: scratch)
+            throw MediaImportError.copyFailed(failure.localizedDescription)
+        }
+        return destination
+    }
+
     /// ينسخ الملف إلى الخزنة ويحسب التجزئة والبيانات الوصفية والمصغّرة.
     static func importFile(from source: URL, kind: MediaKind) async throws -> ImportedMediaInfo {
 

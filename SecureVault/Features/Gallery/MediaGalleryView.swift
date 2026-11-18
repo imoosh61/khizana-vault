@@ -97,7 +97,12 @@ final class MediaImportViewModel: ObservableObject {
             }
 
             do {
-                let info = try await MediaFileStore.importFile(from: url, kind: kind)
+                let staged = try await Task.detached(priority: .userInitiated) {
+                    try MediaFileStore.stageCoordinated(url)
+                }.value
+                defer { try? FileManager.default.removeItem(at: staged.deletingLastPathComponent()) }
+
+                let info = try await MediaFileStore.importFile(from: staged, kind: kind)
                 if isDuplicate(hash: info.contentHash, in: context) {
                     MediaFileStore.removeFile(named: info.fileName)
                     duplicates += 1

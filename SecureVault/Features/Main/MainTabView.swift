@@ -53,8 +53,9 @@ final class AppRouter: ObservableObject {
     @Published var selected: AppSection = .dashboard
     @Published var showNewNote = false
     @Published var showPhotoPicker = false
-    @Published var showNoteImporter = false
-    @Published var showMediaFileImporter = false
+    enum FileImportMode { case notes, media }
+    @Published var showFileImporter = false
+    var fileImportMode: FileImportMode = .notes
     @Published var pasteNoteRequested = false
 }
 
@@ -105,26 +106,18 @@ struct MainTabView: View {
             .environmentObject(router)
         }
         .fileImporter(
-            isPresented: $router.showNoteImporter,
-            allowedContentTypes: NoteImporter.contentTypes,
+            isPresented: $router.showFileImporter,
+            allowedContentTypes: router.fileImportMode == .media ? [.image, .movie] : NoteImporter.contentTypes,
             allowsMultipleSelection: true
         ) { result in
-            switch result {
-            case .success(let urls):
+            switch (router.fileImportMode, result) {
+            case (.notes, .success(let urls)):
                 reportNoteImport(NoteImporter.importFiles(urls, into: context))
-            case .failure(let error):
-                noteImportMessage = error.localizedDescription
-            }
-        }
-        .fileImporter(
-            isPresented: $router.showMediaFileImporter,
-            allowedContentTypes: [.image, .movie],
-            allowsMultipleSelection: true
-        ) { result in
-            switch result {
-            case .success(let urls):
+            case (.media, .success(let urls)):
                 Task { await importer.importFileURLs(urls, context: context) }
-            case .failure(let error):
+            case (.notes, .failure(let error)):
+                noteImportMessage = error.localizedDescription
+            case (.media, .failure(let error)):
                 importer.resultMessage = error.localizedDescription
             }
         }
@@ -186,13 +179,15 @@ private struct FloatingAddButton: View {
             }
 
             Button {
-                router.showMediaFileImporter = true
+                router.fileImportMode = .media
+                router.showFileImporter = true
             } label: {
                 Label("استيراد صور وفيديو من الملفات", systemImage: "folder.badge.plus")
             }
 
             Button {
-                router.showNoteImporter = true
+                router.fileImportMode = .notes
+                router.showFileImporter = true
             } label: {
                 Label("استيراد ملاحظات من ملفات", systemImage: "square.and.arrow.down")
             }

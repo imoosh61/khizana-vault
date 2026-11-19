@@ -28,26 +28,20 @@ final class MediaImportViewModel: ObservableObject {
         total = items.count
 
         var added = 0
-        var duplicates = 0
         var failures = 0
 
         for item in items {
             do {
                 let info = try await MediaFileStore.importPickerItem(item)
 
-                if isDuplicate(hash: info.contentHash, in: context) {
+                MediaItem.insert(in: context, info: info)
+                do {
+                    try context.saveIfNeeded()
+                    added += 1
+                } catch {
+                    context.rollback()
                     MediaFileStore.removeFile(named: info.fileName)
-                    duplicates += 1
-                } else {
-                    MediaItem.insert(in: context, info: info)
-                    do {
-                        try context.saveIfNeeded()
-                        added += 1
-                    } catch {
-                        context.rollback()
-                        MediaFileStore.removeFile(named: info.fileName)
-                        failures += 1
-                    }
+                    failures += 1
                 }
             } catch {
                 failures += 1
@@ -59,7 +53,6 @@ final class MediaImportViewModel: ObservableObject {
 
         var parts: [String] = []
         if added > 0 { parts.append(String(format: String(localized: "تمت إضافة %lld"), added)) }
-        if duplicates > 0 { parts.append(String(format: String(localized: "تم تخطي %lld مكرر"), duplicates)) }
         if failures > 0 { parts.append(String(format: String(localized: "فشل استيراد %lld"), failures)) }
         resultMessage = parts.joined(separator: " • ")
     }
@@ -73,10 +66,11 @@ final class MediaImportViewModel: ObservableObject {
         total = urls.count
 
         var added = 0
-        var duplicates = 0
         var failures = 0
 
         var pendingFiles: [String] = []
+        var failureReasons: [String: Int] = [:]
+        func noteFailure(_ reason: String) { failureReasons[reason, default: 0] += 1 }
 
         /// يحفظ كل 10 عناصر دفعة واحدة (أسرع وأخف على الواجهة وأقل استهلاكاً للذاكرة).
         func commitBatch() {
@@ -89,6 +83,7 @@ final class MediaImportViewModel: ObservableObject {
                 context.rollback()
                 pendingFiles.forEach(MediaFileStore.removeFile(named:))
                 failures += pendingFiles.count
+                noteFailure("تعذّر الحفظ: \(error.localizedDescription)")
             }
             pendingFiles.removeAll()
         }
@@ -97,7 +92,9 @@ final class MediaImportViewModel: ObservableObject {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
-            let type = UTType(filenameExtension: url.pathExtension.lowercased())
+            let ext = url.pathExtension.lowercased()
+            let type = (try? url.resourceValues(forKeys: [.contentTypeKey]).contentType)
+                ?? UTType(filenameExtension: ext)
             let kind: MediaKind?
             if type?.conforms(to: .movie) == true || type?.conforms(to: .video) == true {
                 kind = .video
@@ -109,6 +106,7 @@ final class MediaImportViewModel: ObservableObject {
 
             guard let kind else {
                 failures += 1
+                noteFailure(ext.isEmpty ? "ملف بدون امتداد" : "نوع غير مدعوم: .\(ext)")
                 completed += 1
                 continue
             }
@@ -131,18 +129,14 @@ final class MediaImportViewModel: ObservableObject {
                 }
 
                 let info = try await MediaFileStore.importFile(from: staged, kind: kind)
-                if isDuplicate(hash: info.contentHash, in: context) {
-                    MediaFileStore.removeFile(named: info.fileName)
-                    duplicates += 1
-                } else {
-                    MediaItem.insert(in: context, info: info)
-                    pendingFiles.append(info.fileName)
-                    if pendingFiles.count >= 10 {
-                        commitBatch()
-                    }
+                MediaItem.insert(in: context, info: info)
+                pendingFiles.append(info.fileName)
+                if pendingFiles.count >= 10 {
+                    commitBatch()
                 }
             } catch {
                 failures += 1
+                noteFailure(error.localizedDescription)
             }
             completed += 1
         }
@@ -152,9 +146,14 @@ final class MediaImportViewModel: ObservableObject {
 
         var parts: [String] = []
         if added > 0 { parts.append(String(format: String(localized: "تمت إضافة %lld"), added)) }
-        if duplicates > 0 { parts.append(String(format: String(localized: "تم تخطي %lld مكرر"), duplicates)) }
         if failures > 0 { parts.append(String(format: String(localized: "فشل استيراد %lld"), failures)) }
-        resultMessage = parts.joined(separator: " • ")
+        var message = parts.joined(separator: " • ")
+        if !failureReasons.isEmpty {
+            let top = failureReasons.sorted { $0.value > $1.value }.prefix(4)
+                .map { "\($0.key) (\($0.value))" }
+            message += "\n" + top.joined(separator: "\n")
+        }
+        resultMessage = message
     }
 
     private func isDuplicate(hash: String, in context: NSManagedObjectContext) -> Bool {

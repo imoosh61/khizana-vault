@@ -115,8 +115,11 @@ struct MainTabView: View {
                         case .notes:
                             reportNoteImport(NoteImporter.importFiles(urls, into: context))
                         case .media:
-                            let adopted = MediaFileStore.adoptPickedFiles(urls)
                             Task {
+                                // النقل خارج الخيط الرئيسي حتى تُغلق نافذة الاختيار فوراً.
+                                let adopted = await Task.detached(priority: .userInitiated) {
+                                    MediaFileStore.adoptPickedFiles(urls)
+                                }.value
                                 await importer.importFileURLs(
                                     adopted.staged, context: context, alreadyLocal: true, preFailed: adopted.missing
                                 )

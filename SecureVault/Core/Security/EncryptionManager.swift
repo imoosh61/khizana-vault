@@ -387,8 +387,16 @@ struct EncryptionManager: Sendable {
         defer { try? handle.close() }
 
         var hasher = SHA256()
-        while let chunk = try handle.read(upToCount: bufferSize), !chunk.isEmpty {
-            hasher.update(data: chunk)
+        var finished = false
+        while !finished {
+            // autoreleasepool: بدونه تتراكم أجزاء الـ 1MB في الذاكرة حتى نهاية الملف (انهيار مع الفيديوهات الكبيرة).
+            try autoreleasepool {
+                if let chunk = try handle.read(upToCount: bufferSize), !chunk.isEmpty {
+                    hasher.update(data: chunk)
+                } else {
+                    finished = true
+                }
+            }
         }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }

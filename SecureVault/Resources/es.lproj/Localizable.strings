@@ -199,3 +199,6 @@
 "تشخيص" = "Diagnóstico";
 "حدث عطل في الجلسة السابقة. التقرير محلي ولا يُرسل لأي جهة." = "Ocurrió un fallo en la sesión anterior. El informe es local y no se envía a nadie.";
 "استيراد صور وفيديو من الملفات" = "Importar fotos y vídeos desde Archivos";
+
+"تحديد الكل" = "Seleccionar todo";
+"إلغاء التحديد" = "Deseleccionar todo";

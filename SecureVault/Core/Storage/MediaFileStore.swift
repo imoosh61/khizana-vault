@@ -191,6 +191,10 @@ enum MediaFileStore {
     // MARK: الصور
 
     private static func imageMetadata(at url: URL) -> (width: Int, height: Int, createdAt: Date?) {
+        autoreleasepool { imageMetadataUnpooled(at: url) }
+    }
+
+    private static func imageMetadataUnpooled(at url: URL) -> (width: Int, height: Int, createdAt: Date?) {
         guard
             let source = CGImageSourceCreateWithURL(url as CFURL, nil),
             let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
@@ -216,8 +220,10 @@ enum MediaFileStore {
     }
 
     private static func imageThumbnail(at url: URL) -> Data? {
-        guard let image = downsample(url: url, maxPixel: thumbnailMaxPixel) else { return nil }
-        return UIImage(cgImage: image).jpegData(compressionQuality: 0.8)
+        autoreleasepool {
+            guard let image = downsample(url: url, maxPixel: thumbnailMaxPixel) else { return nil }
+            return UIImage(cgImage: image).jpegData(compressionQuality: 0.8)
+        }
     }
 
     /// تصغير فعّال للذاكرة عبر ImageIO دون فك الصورة كاملة.

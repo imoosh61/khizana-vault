@@ -76,6 +76,23 @@ final class MediaImportViewModel: ObservableObject {
         var duplicates = 0
         var failures = 0
 
+        var pendingFiles: [String] = []
+
+        /// يحفظ كل 10 عناصر دفعة واحدة (أسرع وأخف على الواجهة وأقل استهلاكاً للذاكرة).
+        func commitBatch() {
+            guard !pendingFiles.isEmpty else { return }
+            do {
+                try context.saveIfNeeded()
+                added += pendingFiles.count
+                context.refreshAllObjects()
+            } catch {
+                context.rollback()
+                pendingFiles.forEach(MediaFileStore.removeFile(named:))
+                failures += pendingFiles.count
+            }
+            pendingFiles.removeAll()
+        }
+
         for url in urls {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
@@ -119,13 +136,9 @@ final class MediaImportViewModel: ObservableObject {
                     duplicates += 1
                 } else {
                     MediaItem.insert(in: context, info: info)
-                    do {
-                        try context.saveIfNeeded()
-                        added += 1
-                    } catch {
-                        context.rollback()
-                        MediaFileStore.removeFile(named: info.fileName)
-                        failures += 1
+                    pendingFiles.append(info.fileName)
+                    if pendingFiles.count >= 10 {
+                        commitBatch()
                     }
                 }
             } catch {
@@ -134,6 +147,7 @@ final class MediaImportViewModel: ObservableObject {
             completed += 1
         }
 
+        commitBatch()
         isImporting = false
 
         var parts: [String] = []
@@ -215,9 +229,17 @@ struct MediaGalleryView: View {
         .navigationTitle("الوسائط")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(isSelecting ? LocalizedStringKey("تم") : LocalizedStringKey("تحديد")) {
-                    isSelecting.toggle()
-                    if !isSelecting { selection.removeAll() }
+                HStack(spacing: 14) {
+                    Button(isSelecting ? LocalizedStringKey("تم") : LocalizedStringKey("تحديد")) {
+                        isSelecting.toggle()
+                        if !isSelecting { selection.removeAll() }
+                    }
+
+                    if isSelecting {
+                        Button(allSelected ? LocalizedStringKey("إلغاء التحديد") : LocalizedStringKey("تحديد الكل")) {
+                            toggleSelectAll()
+                        }
+                    }
                 }
             }
 
@@ -258,13 +280,35 @@ struct MediaGalleryView: View {
         }
     }
 
+    /// معرّفات كل العناصر في التصفية الحالية (بدون تحميل الكائنات نفسها).
+    private func allObjectIDs() -> [NSManagedObjectID] {
+        let request = NSFetchRequest<NSManagedObjectID>(entityName: "MediaItem")
+        request.resultType = .managedObjectIDResultType
+        request.predicate = filter.predicate
+        return (try? context.fetch(request)) ?? []
+    }
+
+    private var allSelected: Bool {
+        !selection.isEmpty && selection.count >= allObjectIDs().count
+    }
+
+    private func toggleSelectAll() {
+        if allSelected {
+            selection.removeAll()
+        } else {
+            selection = Set(allObjectIDs())
+        }
+    }
+
     private func deleteSelection() {
         var fileNames: [String] = []
 
         for objectID in selection {
-            guard let item = try? context.existingObject(with: objectID) as? MediaItem else { continue }
-            fileNames.append(item.fileName)
-            context.delete(item)
+            autoreleasepool {
+                guard let item = try? context.existingObject(with: objectID) as? MediaItem else { return }
+                fileNames.append(item.fileName)
+                context.delete(item)
+            }
         }
 
         do {

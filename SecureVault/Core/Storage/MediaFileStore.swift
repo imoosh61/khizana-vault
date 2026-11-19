@@ -123,6 +123,31 @@ enum MediaFileStore {
         return destination
     }
 
+    /// ينقل الملفات التي سلّمها منتقي الملفات فوراً إلى مجلد خاص بالتطبيق (نقل لحظي بلا نسخ)،
+    /// حتى لا يحذفها النظام من المجلد المؤقت أثناء المعالجة الطويلة، ولا تتعارض الأسماء المتشابهة.
+    nonisolated static func adoptPickedFiles(_ urls: [URL]) -> (staged: [URL], missing: Int) {
+        var staged: [URL] = []
+        var missing = 0
+        for url in urls {
+            do {
+                let folder = VaultStorage.rootDirectory
+                    .appending(path: "ImportStaging/\(UUID().uuidString)", directoryHint: .isDirectory)
+                try VaultStorage.ensureDirectory(at: folder)
+                let destination = folder.appending(path: url.lastPathComponent, directoryHint: .notDirectory)
+                do {
+                    try FileManager.default.moveItem(at: url, to: destination)
+                } catch {
+                    // قد يكون النقل مستحيلاً بين وحدتي تخزين: نجرّب النسخ.
+                    try FileManager.default.copyItem(at: url, to: destination)
+                }
+                staged.append(destination)
+            } catch {
+                missing += 1
+            }
+        }
+        return (staged, missing)
+    }
+
     /// ينسخ الملف إلى الخزنة ويحسب التجزئة والبيانات الوصفية والمصغّرة.
     static func importFile(from source: URL, kind: MediaKind) async throws -> ImportedMediaInfo {
 

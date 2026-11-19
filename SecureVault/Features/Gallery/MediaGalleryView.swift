@@ -58,19 +58,20 @@ final class MediaImportViewModel: ObservableObject {
     }
 
     /// استيراد صور/فيديوهات من تطبيق «الملفات».
-    func importFileURLs(_ urls: [URL], context: NSManagedObjectContext, alreadyLocal: Bool = false) async {
-        guard !urls.isEmpty, !isImporting else { return }
+    func importFileURLs(_ urls: [URL], context: NSManagedObjectContext, alreadyLocal: Bool = false, preFailed: Int = 0) async {
+        guard !urls.isEmpty || preFailed > 0, !isImporting else { return }
 
         isImporting = true
         completed = 0
         total = urls.count
 
         var added = 0
-        var failures = 0
+        var failures = preFailed
 
         var pendingFiles: [String] = []
         var failureReasons: [String: Int] = [:]
         func noteFailure(_ reason: String) { failureReasons[reason, default: 0] += 1 }
+        if preFailed > 0 { failureReasons["تعذّر الوصول إلى الملف بعد اختياره", default: 0] = preFailed }
 
         /// يحفظ كل 10 عناصر دفعة واحدة (أسرع وأخف على الواجهة وأقل استهلاكاً للذاكرة).
         func commitBatch() {
@@ -121,11 +122,8 @@ final class MediaImportViewModel: ObservableObject {
                     }.value
                 }
                 defer {
-                    if alreadyLocal {
-                        try? FileManager.default.removeItem(at: staged)
-                    } else {
-                        try? FileManager.default.removeItem(at: staged.deletingLastPathComponent())
-                    }
+                    // لكل ملف مجلد مرحلي خاص به، فنحذفه كاملاً بعد المعالجة.
+                    try? FileManager.default.removeItem(at: staged.deletingLastPathComponent())
                 }
 
                 let info = try await MediaFileStore.importFile(from: staged, kind: kind)

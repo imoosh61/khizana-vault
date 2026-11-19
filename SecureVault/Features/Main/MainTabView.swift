@@ -115,7 +115,12 @@ struct MainTabView: View {
                         case .notes:
                             reportNoteImport(NoteImporter.importFiles(urls, into: context))
                         case .media:
-                            Task { await importer.importFileURLs(urls, context: context, alreadyLocal: true) }
+                            let adopted = MediaFileStore.adoptPickedFiles(urls)
+                            Task {
+                                await importer.importFileURLs(
+                                    adopted.staged, context: context, alreadyLocal: true, preFailed: adopted.missing
+                                )
+                            }
                         }
                     },
                     onCancel: { router.showFileImporter = false }

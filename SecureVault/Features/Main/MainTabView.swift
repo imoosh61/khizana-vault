@@ -105,22 +105,24 @@ struct MainTabView: View {
             .environment(\.managedObjectContext, context)
             .environmentObject(router)
         }
-        .fileImporter(
-            isPresented: $router.showFileImporter,
-            allowedContentTypes: router.fileImportMode == .media ? [.image, .movie] : NoteImporter.contentTypes,
-            allowsMultipleSelection: true
-        ) { result in
-            switch (router.fileImportMode, result) {
-            case (.notes, .success(let urls)):
-                reportNoteImport(NoteImporter.importFiles(urls, into: context))
-            case (.media, .success(let urls)):
-                Task { await importer.importFileURLs(urls, context: context) }
-            case (.notes, .failure(let error)):
-                noteImportMessage = error.localizedDescription
-            case (.media, .failure(let error)):
-                importer.resultMessage = error.localizedDescription
+        .background(
+            Color.clear.sheet(isPresented: $router.showFileImporter) {
+                DocumentCopyPicker(
+                    types: router.fileImportMode == .media ? [.image, .movie] : NoteImporter.contentTypes,
+                    onPick: { urls in
+                        router.showFileImporter = false
+                        switch router.fileImportMode {
+                        case .notes:
+                            reportNoteImport(NoteImporter.importFiles(urls, into: context))
+                        case .media:
+                            Task { await importer.importFileURLs(urls, context: context, alreadyLocal: true) }
+                        }
+                    },
+                    onCancel: { router.showFileImporter = false }
+                )
+                .ignoresSafeArea()
             }
-        }
+        )
         .onChange(of: router.pasteNoteRequested) { requested in
             guard requested else { return }
             router.pasteNoteRequested = false

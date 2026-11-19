@@ -65,7 +65,7 @@ final class MediaImportViewModel: ObservableObject {
     }
 
     /// استيراد صور/فيديوهات من تطبيق «الملفات».
-    func importFileURLs(_ urls: [URL], context: NSManagedObjectContext) async {
+    func importFileURLs(_ urls: [URL], context: NSManagedObjectContext, alreadyLocal: Bool = false) async {
         guard !urls.isEmpty, !isImporting else { return }
 
         isImporting = true
@@ -97,10 +97,21 @@ final class MediaImportViewModel: ObservableObject {
             }
 
             do {
-                let staged = try await Task.detached(priority: .userInitiated) {
-                    try MediaFileStore.stageCoordinated(url)
-                }.value
-                defer { try? FileManager.default.removeItem(at: staged.deletingLastPathComponent()) }
+                let staged: URL
+                if alreadyLocal {
+                    staged = url
+                } else {
+                    staged = try await Task.detached(priority: .userInitiated) {
+                        try MediaFileStore.stageCoordinated(url)
+                    }.value
+                }
+                defer {
+                    if alreadyLocal {
+                        try? FileManager.default.removeItem(at: staged)
+                    } else {
+                        try? FileManager.default.removeItem(at: staged.deletingLastPathComponent())
+                    }
+                }
 
                 let info = try await MediaFileStore.importFile(from: staged, kind: kind)
                 if isDuplicate(hash: info.contentHash, in: context) {

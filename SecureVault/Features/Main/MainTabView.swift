@@ -109,21 +109,15 @@ struct MainTabView: View {
             Color.clear.sheet(isPresented: $router.showFileImporter) {
                 DocumentCopyPicker(
                     types: router.fileImportMode == .media ? [.image, .movie] : NoteImporter.contentTypes,
+                    asCopy: router.fileImportMode != .media,
                     onPick: { urls in
                         router.showFileImporter = false
                         switch router.fileImportMode {
                         case .notes:
                             reportNoteImport(NoteImporter.importFiles(urls, into: context))
                         case .media:
-                            Task {
-                                // النقل خارج الخيط الرئيسي حتى تُغلق نافذة الاختيار فوراً.
-                                let adopted = await Task.detached(priority: .userInitiated) {
-                                    MediaFileStore.adoptPickedFiles(urls)
-                                }.value
-                                await importer.importFileURLs(
-                                    adopted.staged, context: context, alreadyLocal: true, preFailed: adopted.missing
-                                )
-                            }
+                            // روابط أصلية: يفتحها المستورد واحداً واحداً (startAccessing + نسخ منسّق).
+                            Task { await importer.importFileURLs(urls, context: context, alreadyLocal: false) }
                         }
                     },
                     onCancel: { router.showFileImporter = false }

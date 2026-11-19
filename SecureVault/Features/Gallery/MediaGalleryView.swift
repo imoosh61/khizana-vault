@@ -122,8 +122,12 @@ final class MediaImportViewModel: ObservableObject {
                     }.value
                 }
                 defer {
-                    // لكل ملف مجلد مرحلي خاص به، فنحذفه كاملاً بعد المعالجة.
-                    try? FileManager.default.removeItem(at: staged.deletingLastPathComponent())
+                    if alreadyLocal {
+                        try? FileManager.default.removeItem(at: staged)
+                    } else {
+                        // مجلد مرحلي مؤقت خاص بالملف (لا يمسّ الملف الأصلي).
+                        try? FileManager.default.removeItem(at: staged.deletingLastPathComponent())
+                    }
                 }
 
                 let info = try await MediaFileStore.importFile(from: staged, kind: kind)

@@ -14,6 +14,9 @@ import UniformTypeIdentifiers
 struct DocumentCopyPicker: UIViewControllerRepresentable {
 
     let types: [UTType]
+    /// true: يسلّم النظام نسخاً جاهزة (مناسب للملفات الصغيرة).
+    /// false: يسلّم روابط الملفات الأصلية فوراً بلا نسخ، ونقرؤها نحن واحداً تلو الآخر (مناسب لمئات الملفات الكبيرة).
+    var asCopy: Bool = true
     let onPick: ([URL]) -> Void
     let onCancel: () -> Void
 
@@ -22,7 +25,7 @@ struct DocumentCopyPicker: UIViewControllerRepresentable {
     }
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: true)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: asCopy)
         picker.allowsMultipleSelection = true
         picker.shouldShowFileExtensions = true
         picker.delegate = context.coordinator

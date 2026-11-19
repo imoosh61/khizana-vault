@@ -202,3 +202,29 @@
 
 "تحديد الكل" = "Select All";
 "إلغاء التحديد" = "Deselect All";
+
+/* استيراد الملفات */
+"جارٍ فحص الملفات…" = "Scanning files…";
+"جارٍ نقل الملفات إلى التطبيق" = "Transferring files to the app";
+"جارٍ إضافة الملفات إلى الخزنة" = "Adding files to the vault";
+"إيقاف" = "Stop";
+"أبقِ التطبيق مفتوحاً حتى ينتهي الاستيراد" = "Keep the app open until the import finishes";
+"%lld ملف بانتظار الإضافة إلى الخزنة" = "%lld files waiting to be added to the vault";
+"متابعة" = "Continue";
+"حذفها" = "Delete them";
+"حذف الملفات المنتظرة؟ (الأصل يبقى في تطبيق الملفات)" = "Delete waiting files? (Originals stay in the Files app)";
+"استيراد مجلد كامل من الملفات" = "Import a whole folder from Files";
+"تعذّر النسخ" = "Copy failed";
+"الملف لم يعد موجوداً في مكانه" = "The file is no longer at its location";
+"لا توجد صلاحية لقراءة الملف" = "No permission to read the file";
+"المساحة على الجهاز ممتلئة" = "Device storage is full";
+"الملف تالف" = "The file is corrupted";
+"أُلغي تنزيل الملف من iCloud" = "iCloud download was cancelled";
+"تم تجاهل %lld ملف ليس صورة أو فيديو" = "Ignored %lld non-photo/video files";
+"لم تتم إضافة أي ملف" = "No files were added";
+"تم الإيقاف — الملفات المتبقية محفوظة ويمكنك المتابعة لاحقاً." = "Stopped — remaining files are kept and you can continue later.";
+"المساحة غير كافية: الملفات تحتاج %@ والمتاح %@" = "Not enough space: files need %@, available %@";
+"%lld ملف" = "%lld files";
+"تعذّر فتح المجلد" = "Couldn’t open the folder";
+"تعذّر الحفظ في قاعدة البيانات" = "Couldn’t save to the database";
+"ليس صورة أو فيديو صالحاً" = "Not a valid photo or video";

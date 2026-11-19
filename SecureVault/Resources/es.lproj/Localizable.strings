@@ -202,3 +202,29 @@
 
 "تحديد الكل" = "Seleccionar todo";
 "إلغاء التحديد" = "Deseleccionar todo";
+
+/* استيراد الملفات */
+"جارٍ فحص الملفات…" = "Analizando archivos…";
+"جارٍ نقل الملفات إلى التطبيق" = "Transfiriendo archivos a la app";
+"جارٍ إضافة الملفات إلى الخزنة" = "Añadiendo archivos a la bóveda";
+"إيقاف" = "Detener";
+"أبقِ التطبيق مفتوحاً حتى ينتهي الاستيراد" = "Mantén la app abierta hasta que termine la importación";
+"%lld ملف بانتظار الإضافة إلى الخزنة" = "%lld archivos esperando para añadirse a la bóveda";
+"متابعة" = "Continuar";
+"حذفها" = "Eliminarlos";
+"حذف الملفات المنتظرة؟ (الأصل يبقى في تطبيق الملفات)" = "¿Eliminar los archivos en espera? (Los originales siguen en Archivos)";
+"استيراد مجلد كامل من الملفات" = "Importar una carpeta completa desde Archivos";
+"تعذّر النسخ" = "Error al copiar";
+"الملف لم يعد موجوداً في مكانه" = "El archivo ya no está en su ubicación";
+"لا توجد صلاحية لقراءة الملف" = "Sin permiso para leer el archivo";
+"المساحة على الجهاز ممتلئة" = "El almacenamiento está lleno";
+"الملف تالف" = "El archivo está dañado";
+"أُلغي تنزيل الملف من iCloud" = "Se canceló la descarga de iCloud";
+"تم تجاهل %lld ملف ليس صورة أو فيديو" = "Se ignoraron %lld archivos que no son foto ni video";
+"لم تتم إضافة أي ملف" = "No se añadió ningún archivo";
+"تم الإيقاف — الملفات المتبقية محفوظة ويمكنك المتابعة لاحقاً." = "Detenido: los archivos restantes se conservan y puedes continuar más tarde.";
+"المساحة غير كافية: الملفات تحتاج %@ والمتاح %@" = "Espacio insuficiente: se necesitan %@, disponibles %@";
+"%lld ملف" = "%lld archivos";
+"تعذّر فتح المجلد" = "No se pudo abrir la carpeta";
+"تعذّر الحفظ في قاعدة البيانات" = "No se pudo guardar en la base de datos";
+"ليس صورة أو فيديو صالحاً" = "No es una foto o video válido";

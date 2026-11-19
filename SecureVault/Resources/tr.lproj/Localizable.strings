@@ -202,3 +202,29 @@
 
 "تحديد الكل" = "Tümünü Seç";
 "إلغاء التحديد" = "Seçimi Kaldır";
+
+/* استيراد الملفات */
+"جارٍ فحص الملفات…" = "Dosyalar taranıyor…";
+"جارٍ نقل الملفات إلى التطبيق" = "Dosyalar uygulamaya aktarılıyor";
+"جارٍ إضافة الملفات إلى الخزنة" = "Dosyalar kasaya ekleniyor";
+"إيقاف" = "Durdur";
+"أبقِ التطبيق مفتوحاً حتى ينتهي الاستيراد" = "İçe aktarma bitene kadar uygulamayı açık tutun";
+"%lld ملف بانتظار الإضافة إلى الخزنة" = "%lld dosya kasaya eklenmeyi bekliyor";
+"متابعة" = "Devam";
+"حذفها" = "Sil";
+"حذف الملفات المنتظرة؟ (الأصل يبقى في تطبيق الملفات)" = "Bekleyen dosyalar silinsin mi? (Orijinaller Dosyalar’da kalır)";
+"استيراد مجلد كامل من الملفات" = "Dosyalar’dan tüm klasörü içe aktar";
+"تعذّر النسخ" = "Kopyalama başarısız";
+"الملف لم يعد موجوداً في مكانه" = "Dosya artık konumunda değil";
+"لا توجد صلاحية لقراءة الملف" = "Dosyayı okuma izni yok";
+"المساحة على الجهاز ممتلئة" = "Cihaz depolama alanı dolu";
+"الملف تالف" = "Dosya bozuk";
+"أُلغي تنزيل الملف من iCloud" = "iCloud indirmesi iptal edildi";
+"تم تجاهل %lld ملف ليس صورة أو فيديو" = "Fotoğraf/video olmayan %lld dosya yok sayıldı";
+"لم تتم إضافة أي ملف" = "Hiç dosya eklenmedi";
+"تم الإيقاف — الملفات المتبقية محفوظة ويمكنك المتابعة لاحقاً." = "Durduruldu — kalan dosyalar saklandı, daha sonra devam edebilirsiniz.";
+"المساحة غير كافية: الملفات تحتاج %@ والمتاح %@" = "Yetersiz alan: %@ gerekli, %@ mevcut";
+"%lld ملف" = "%lld dosya";
+"تعذّر فتح المجلد" = "Klasör açılamadı";
+"تعذّر الحفظ في قاعدة البيانات" = "Veritabanına kaydedilemedi";
+"ليس صورة أو فيديو صالحاً" = "Geçerli bir fotoğraf/video değil";

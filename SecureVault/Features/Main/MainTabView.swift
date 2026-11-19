@@ -53,9 +53,8 @@ final class AppRouter: ObservableObject {
     @Published var selected: AppSection = .dashboard
     @Published var showNewNote = false
     @Published var showPhotoPicker = false
-    enum FileImportMode { case notes, media }
-    @Published var showFileImporter = false
-    var fileImportMode: FileImportMode = .notes
+    /// ملفات ملاحظات اختارها المستخدم من منتقي الملفات (تُعالَج في MainTabView).
+    @Published var pickedNoteURLs: [URL] = []
     @Published var pasteNoteRequested = false
 }
 
@@ -63,6 +62,7 @@ struct MainTabView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
 
     @EnvironmentObject private var router: AppRouter
     @StateObject private var importer = MediaImportViewModel()
@@ -105,26 +105,18 @@ struct MainTabView: View {
             .environment(\.managedObjectContext, context)
             .environmentObject(router)
         }
-        .background(
-            Color.clear.sheet(isPresented: $router.showFileImporter) {
-                DocumentCopyPicker(
-                    types: router.fileImportMode == .media ? [.image, .movie] : NoteImporter.contentTypes,
-                    asCopy: router.fileImportMode != .media,
-                    onPick: { urls in
-                        router.showFileImporter = false
-                        switch router.fileImportMode {
-                        case .notes:
-                            reportNoteImport(NoteImporter.importFiles(urls, into: context))
-                        case .media:
-                            // روابط أصلية: يفتحها المستورد واحداً واحداً (startAccessing + نسخ منسّق).
-                            Task { await importer.importFileURLs(urls, context: context, alreadyLocal: false) }
-                        }
-                    },
-                    onCancel: { router.showFileImporter = false }
-                )
-                .ignoresSafeArea()
-            }
-        )
+        .overlay(alignment: .bottom) {
+            ImportStatusView()
+                .padding(.bottom, horizontalSizeClass == .regular ? 100 : 140)
+        }
+        .onChange(of: router.pickedNoteURLs) { urls in
+            guard !urls.isEmpty else { return }
+            router.pickedNoteURLs = []
+            reportNoteImport(NoteImporter.importFiles(urls, into: context))
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active { FileImportCenter.shared.refreshPending() }
+        }
         .onChange(of: router.pasteNoteRequested) { requested in
             guard requested else { return }
             router.pasteNoteRequested = false
@@ -167,6 +159,20 @@ struct MainTabView: View {
 private struct FloatingAddButton: View {
 
     @EnvironmentObject private var router: AppRouter
+    @EnvironmentObject private var environment: AppEnvironment
+    @ObservedObject private var fileImport = FileImportCenter.shared
+
+    private func importMedia(folder: Bool) {
+        guard let container = environment.persistence?.container else { return }
+        DocumentPickerPresenter.present(
+            types: folder ? [.folder] : [.image, .movie],
+            asCopy: false,
+            allowsMultipleSelection: !folder
+        ) { urls in
+            router.selected = .media
+            FileImportCenter.shared.start(picked: urls, container: container)
+        }
+    }
 
     var body: some View {
         Menu {
@@ -183,15 +189,27 @@ private struct FloatingAddButton: View {
             }
 
             Button {
-                router.fileImportMode = .media
-                router.showFileImporter = true
+                importMedia(folder: false)
             } label: {
-                Label("استيراد صور وفيديو من الملفات", systemImage: "folder.badge.plus")
+                Label("استيراد صور وفيديو من الملفات", systemImage: "doc.badge.plus")
             }
+            .disabled(fileImport.isBusy)
 
             Button {
-                router.fileImportMode = .notes
-                router.showFileImporter = true
+                importMedia(folder: true)
+            } label: {
+                Label("استيراد مجلد كامل من الملفات", systemImage: "folder.badge.plus")
+            }
+            .disabled(fileImport.isBusy)
+
+            Button {
+                DocumentPickerPresenter.present(
+                    types: NoteImporter.contentTypes,
+                    asCopy: true,
+                    allowsMultipleSelection: true
+                ) { urls in
+                    router.pickedNoteURLs = urls
+                }
             } label: {
                 Label("استيراد ملاحظات من ملفات", systemImage: "square.and.arrow.down")
             }

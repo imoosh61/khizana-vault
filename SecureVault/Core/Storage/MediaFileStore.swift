@@ -98,62 +98,22 @@ enum MediaFileStore {
         return try await importFile(from: tempURL, kind: isVideo ? .video : .image)
     }
 
-    /// ينسخ ملفاً من «الملفات» إلى مجلد مؤقت عبر NSFileCoordinator
-    /// (يضمن تنزيل ملفات iCloud غير المحمّلة قبل القراءة). يجب حذف المجلد الأب بعد الاستخدام.
-    nonisolated static func stageCoordinated(_ url: URL) throws -> URL {
-        let scratch = try VaultStorage.makeScratchDirectory()
-        let destination = scratch.appending(path: url.lastPathComponent, directoryHint: .notDirectory)
-
-        var coordinationError: NSError?
-        var copyError: Error?
-        NSFileCoordinator(filePresenter: nil).coordinate(
-            readingItemAt: url, options: [], error: &coordinationError
-        ) { readable in
-            do {
-                try FileManager.default.copyItem(at: readable, to: destination)
-            } catch {
-                copyError = error
-            }
-        }
-
-        if let failure = coordinationError ?? copyError {
-            try? FileManager.default.removeItem(at: scratch)
-            throw MediaImportError.copyFailed(failure.localizedDescription)
-        }
-        return destination
-    }
-
-    /// ينقل الملفات التي سلّمها منتقي الملفات فوراً إلى مجلد خاص بالتطبيق (نقل لحظي بلا نسخ)،
-    /// حتى لا يحذفها النظام من المجلد المؤقت أثناء المعالجة الطويلة، ولا تتعارض الأسماء المتشابهة.
-    nonisolated static func adoptPickedFiles(_ urls: [URL]) -> (staged: [URL], missing: Int) {
-        var staged: [URL] = []
-        var missing = 0
-        for url in urls {
-            do {
-                let folder = VaultStorage.rootDirectory
-                    .appending(path: "ImportStaging/\(UUID().uuidString)", directoryHint: .isDirectory)
-                try VaultStorage.ensureDirectory(at: folder)
-                let destination = folder.appending(path: url.lastPathComponent, directoryHint: .notDirectory)
-                do {
-                    try FileManager.default.moveItem(at: url, to: destination)
-                } catch {
-                    // قد يكون النقل مستحيلاً بين وحدتي تخزين: نجرّب النسخ.
-                    try FileManager.default.copyItem(at: url, to: destination)
-                }
-                staged.append(destination)
-            } catch {
-                missing += 1
-            }
-        }
-        return (staged, missing)
-    }
-
     /// ينسخ الملف إلى الخزنة ويحسب التجزئة والبيانات الوصفية والمصغّرة.
-    static func importFile(from source: URL, kind: MediaKind) async throws -> ImportedMediaInfo {
+    /// - Parameters:
+    ///   - originalName: الاسم المعروض (افتراضياً اسم الملف المصدر).
+    ///   - preferredExtension: امتداد يُستخدم إن لم يكن للمصدر امتداد.
+    ///   - moveSource: true = نقل الملف بدل نسخه (لحظي ولا يستهلك مساحة إضافية).
+    static func importFile(
+        from source: URL,
+        kind: MediaKind,
+        originalName: String? = nil,
+        preferredExtension: String? = nil,
+        moveSource: Bool = false
+    ) async throws -> ImportedMediaInfo {
 
-        let originalName = source.lastPathComponent
+        let originalName = originalName ?? source.lastPathComponent
         var ext = source.pathExtension.lowercased()
-        if ext.isEmpty { ext = (kind == .video) ? "mov" : "jpg" }
+        if ext.isEmpty { ext = preferredExtension ?? ((kind == .video) ? "mov" : "jpg") }
 
         let storedName = "\(UUID().uuidString.lowercased()).\(ext)"
         let target = VaultStorage.mediaDirectory.appending(path: storedName, directoryHint: .notDirectory)
@@ -161,7 +121,11 @@ enum MediaFileStore {
         VaultStorage.prepareDirectories()
 
         do {
-            try FileManager.default.copyItem(at: source, to: target)
+            if moveSource {
+                try FileManager.default.moveItem(at: source, to: target)
+            } else {
+                try FileManager.default.copyItem(at: source, to: target)
+            }
         } catch {
             throw MediaImportError.copyFailed(error.localizedDescription)
         }

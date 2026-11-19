@@ -31,6 +31,10 @@ enum ImportInbox {
         URL.documentsDirectory.appending(path: folderName, directoryHint: .isDirectory)
     }
 
+    /// مجلد التطبيق الظاهر في «الملفات» (على الـ iPhone ← خِزانة). يُستخدم للاستيراد فقط،
+    /// فأي ملف يضعه المستخدم فيه أو في أي مجلد داخله يُعتبر بانتظار الإضافة.
+    static var scanRoot: URL { URL.documentsDirectory }
+
     static func prepare() {
         let fm = FileManager.default
         if !fm.fileExists(atPath: directory.path(percentEncoded: false)) {
@@ -51,7 +55,7 @@ enum ImportInbox {
     static func pendingFiles() -> [URL] {
         let fm = FileManager.default
         guard let enumerator = fm.enumerator(
-            at: directory,
+            at: scanRoot,
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles, .skipsPackageDescendants]
         ) else { return [] }
@@ -84,17 +88,24 @@ enum ImportInbox {
     /// يحذف المجلدات الفرعية الفارغة بعد المعالجة.
     static func removeEmptySubfolders() {
         let fm = FileManager.default
-        guard let items = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isDirectoryKey]) else { return }
+        guard let items = try? fm.contentsOfDirectory(at: scanRoot, includingPropertiesForKeys: [.isDirectoryKey]) else { return }
         for item in items where (try? item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
+            guard item.standardizedFileURL != directory.standardizedFileURL else { continue }
             if ImportInboxScan.isEmptyTree(item) { try? fm.removeItem(at: item) }
+        }
+        if let inner = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isDirectoryKey]) {
+            for item in inner where (try? item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
+                if ImportInboxScan.isEmptyTree(item) { try? fm.removeItem(at: item) }
+            }
         }
     }
 
     static func removeAll() {
         let fm = FileManager.default
-        if let items = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
+        if let items = try? fm.contentsOfDirectory(at: scanRoot, includingPropertiesForKeys: nil) {
             items.forEach { try? fm.removeItem(at: $0) }
         }
+        prepare()
     }
 }
 
